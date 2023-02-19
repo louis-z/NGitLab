@@ -186,7 +186,7 @@ namespace NGitLab.Tests
         [TestCase(null, null, null, null, null, null, null, null, null, null, null, null, true, false, null, null, null)]
         [TestCase(false, true, false, true, "me", "what-to-search-for", 100, "username", "asc", "external-uid", "some-provider", false, true, false, true, TwoFactorState.Disabled, true)]
         [TestCase(true, false, true, false, "", "", 100, "", "", "", "", true, false, true, false, TwoFactorState.Enabled, false)]
-        public async Task ValidateThatQueryStringHelperWorks(
+        public void ValidateThatQueryStringHelperWorks(
             bool? active,
             bool? blocked,
             bool? external,
@@ -205,7 +205,6 @@ namespace NGitLab.Tests
             TwoFactorState? twoFactor,
             bool? isAdmin)
         {
-            using var context = await GitLabTestContext.CreateAsync();
             var query = new UserQuery
             {
                 IsActive = active,
@@ -226,17 +225,17 @@ namespace NGitLab.Tests
                 TwoFactor = twoFactor,
                 IsAdmin = isAdmin,
             };
-            var userClient = context.Client.Users as UserClient;
-            var oldUrl = userClient.ConstructUrlTheOldWay(query);
-            var newUrl = userClient.ConstructUrl(query);
+
+            var oldUrl = UserClient.ConstructUrlTheOldWay(query);
+            var newUrl = UserClient.ConstructUrl(query);
 
             const string expectedPrefix = "/users?";
             StringAssert.StartsWith(expectedPrefix, oldUrl);
             StringAssert.StartsWith(expectedPrefix, newUrl);
 
             AssertQueryStringsAreEquivalent(
-                oldUrl.Substring(expectedPrefix.Length),
-                newUrl.Substring(expectedPrefix.Length));
+                oldUrl[expectedPrefix.Length..],
+                newUrl[expectedPrefix.Length..]);
         }
 
         private static User CreateNewUser(GitLabTestContext context)
@@ -261,10 +260,13 @@ namespace NGitLab.Tests
             });
         }
 
-        private static void AssertQueryStringsAreEquivalent(string query1, string query2)
+        private static void AssertQueryStringsAreEquivalent(string oldQuery, string newQuery)
         {
-            var params1 = ExtractAndSortQueryParameters(query1);
-            var params2 = ExtractAndSortQueryParameters(query2);
+            // The old query's length is equal or greater than the new query's.
+            Assert.GreaterOrEqual(oldQuery.Length, newQuery.Length);
+
+            var params1 = ExtractAndSortQueryParameters(oldQuery);
+            var params2 = ExtractAndSortQueryParameters(newQuery);
 
             if (!params1.SequenceEqual(params2, StringComparer.Ordinal))
             {
@@ -276,14 +278,13 @@ namespace NGitLab.Tests
                 return query.Split('&')
                     .Where(qp =>
                     {
-                        var kvPair = qp.Split('=');
-                        var value = kvPair.Skip(1).FirstOrDefault();
+                        var value = qp.Split('=').Skip(1).FirstOrDefault();
 
                         // Ignore query parameters with no value, such as 'provider=',
                         // as the new way of constructing query strings will omit those.
                         return !string.IsNullOrEmpty(value);
                     })
-                    .OrderBy(qp => qp)
+                    .OrderBy(qp => qp, StringComparer.Ordinal)
                     .ToArray();
             }
         }

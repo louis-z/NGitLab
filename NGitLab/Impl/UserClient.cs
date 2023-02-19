@@ -36,7 +36,12 @@ namespace NGitLab.Impl
             return _api.Get().GetAll<User>(url);
         }
 
-        internal string ConstructUrlTheOldWay(UserQuery query)
+        internal static string ConstructUrl(UserQuery query)
+        {
+            return QueryStringHelper.BuildAndAppendQueryString(User.Url, query);
+        }
+
+        internal static string ConstructUrlTheOldWay(UserQuery query)
         {
             var url = User.Url;
 
@@ -59,12 +64,6 @@ namespace NGitLab.Impl
             url = Utils.AddParameter(url, "admins", query.IsAdmin);
 
             return url;
-        }
-
-        internal string ConstructUrl(UserQuery query)
-        {
-            var url = User.Url;
-            return QueryStringHelper.BuildAndAppendQueryString(url, query);
         }
 
         public User Create(UserUpsert user) => _api.Post().With(user).To<User>(User.Url);
