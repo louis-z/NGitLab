@@ -1,4 +1,6 @@
-﻿namespace NGitLab.Models
+﻿using System;
+
+namespace NGitLab.Models
 {
     /// <summary>
     /// Allows to use more advanced GitLab queries for getting groups (based on v4 GitLab API).
@@ -10,18 +12,21 @@
         /// Skip the group IDs passed
         /// (optional)
         /// </summary>
+        [QueryParameter("skip_groups[]")]
         public int[] SkipGroups;
 
         /// <summary>
         /// Show all the groups you have access to (defaults to false for authenticated users, true for admin); Attributes owned and min_access_level have precedence
         /// (optional)
         /// </summary>
+        [QueryParameter("all_available")]
         public bool? AllAvailable;
 
         /// <summary>
         /// Return the list of authorized groups matching the search criteria
         /// (optional)
         /// </summary>
+        [QueryParameter("search")]
         public string Search;
 
         /// <summary>
@@ -34,24 +39,28 @@
         /// Order groups in asc or desc order. Default is ascending
         /// (optional)
         /// </summary>
+        [QueryParameter("sort")]
         public string Sort;
 
         /// <summary>
         /// Include group statistics (admins only)
         /// (optional)
         /// </summary>
+        [QueryParameter("statistics")]
         public bool? Statistics;
 
         /// <summary>
         /// Include custom attributes in response (admins only)
         /// (optional)
         /// </summary>
+        [QueryParameter("with_custom_attributes")]
         public bool? WithCustomAttributes;
 
         /// <summary>
         /// Limit to groups explicitly owned by the current user
         /// (optional)
         /// </summary>
+        [QueryParameter("owned")]
         public bool? Owned;
 
         /// <summary>
@@ -59,5 +68,17 @@
         /// (optional)
         /// </summary>
         public AccessLevel? MinAccessLevel;
+
+        // The following 2 properties reproduce the following logic:
+        // https://github.com/ubisoft/NGitLab/blob/3c262053f9403594d7d9b3a447eb62f43911c84c/NGitLab/Impl/GroupsClient.cs#L61
+        // https://github.com/ubisoft/NGitLab/blob/3c262053f9403594d7d9b3a447eb62f43911c84c/NGitLab/Impl/Utils.cs#L32-L46
+        [QueryParameter("order_by")]
+        public string ActualOrderBy => string.IsNullOrEmpty(OrderBy) ? "id" : OrderBy;
+
+        [QueryParameter("pagination")]
+        public string Pagination => string.Equals(ActualOrderBy, "id", StringComparison.Ordinal) ? "keyset" : null;
+
+        [QueryParameter("min_access_level")]
+        public int? ActualMinAccessLevel => (int?)MinAccessLevel;
     }
 }

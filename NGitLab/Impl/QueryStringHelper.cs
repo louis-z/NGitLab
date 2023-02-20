@@ -42,19 +42,32 @@ internal static class QueryStringHelper
             if (memberValue is null)
                 continue;
 
+            // See https://docs.gitlab.com/ee/api/rest/#array
+            if (memberValue is int[] intArray)
+            {
+                foreach (var intItem in intArray)
+                    AppendQueryParameter(sb, queryParameter.Name, intItem);
+                continue;
+            }
+
+            AppendQueryParameter(sb, queryParameter.Name, memberValue);
+        }
+
+        return sb.ToString();
+
+        static void AppendQueryParameter(StringBuilder sb, string queryParameterName, object memberValue)
+        {
             var queryParameterValue = FormatAsQueryParameterValue(memberValue);
             if (string.IsNullOrEmpty(queryParameterValue))
-                continue;
+                return;
 
             if (sb.Length > 0)
                 sb.Append('&');
 
-            sb.Append(queryParameter.Name)
+            sb.Append(queryParameterName)
               .Append('=')
               .Append(WebUtility.UrlEncode(queryParameterValue));
         }
-
-        return sb.ToString();
     }
 
     private static string FormatAsQueryParameterValue(object value)

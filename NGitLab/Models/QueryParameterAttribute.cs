@@ -2,6 +2,9 @@
 
 namespace NGitLab.Models;
 
+/// <summary>
+/// Identifies a field or property that represents a REST API Query Parameter
+/// </summary>
 [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
 public sealed class QueryParameterAttribute : Attribute
 {
